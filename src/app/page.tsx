@@ -1,103 +1,279 @@
-import Image from "next/image";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+import { useState, useEffect } from "react";
+import PokeTeamSlot from "@/components/PokeTeamSlot";
+import PokeEvolution from "@/components/PokeEvolution";
+import { fetchPokemonList, fetchTypeAdvantages } from "@/utils/pokeapi";
+import PokeCardSearch from "../components/PokeCardSearch";
+import PokeDetailsModal from "@/components/PokeDetailsModal";
+import PokeType from "@/components/aux components/type";
+import ErrorIcon from "../../public/material-symbols--close-rounded.svg";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [team, setTeam] = useState<(string | null)[]>([
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+  ]);
+  const [pokemonList, setPokemonList] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
+  const [typeAdvantages, setTypeAdvantages] = useState<any>(null);
+  const [openModal, setOpenModal] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const [modalPokeImage, setModalPokeImage] = useState(ErrorIcon);
+  const [modalPokeName, setmodalPokeName] = useState("");
+  const [modalPokeNumber, setmodalPokeNumber] = useState(1);
+  const [modalPokeDesc, setModalPokeDesc] = useState(" ");
+  const [modalPokeTypes, setModalPokeTypes] = useState([" "]);
+
+  const [currentScreen, setCurrentScreen] = useState(0); // Estado para alternar entre as telas
+
+  const handleNextScreen = () => {
+    setCurrentScreen((prev) => (prev + 1) % 2); // Alterna entre 0 e 1
+  };
+
+  const handlePreviousScreen = () => {
+    setCurrentScreen((prev) => (prev - 1 + 2) % 2); // Alterna entre 0 e 1
+  };
+
+  // Busca o pokemon
+  useEffect(() => {
+    const loadPokemonList = async () => {
+      const list = await fetchPokemonList();
+      setPokemonList(list);
+    };
+    loadPokemonList();
+  }, []);
+
+  // Calcula as vantagens e fraquezas do time
+  useEffect(() => {
+    const calculateAdvantages = async () => {
+      const types = team
+        .filter(Boolean) // Remove slots vazios
+        .map((pokemonName) => {
+          const pokemon = pokemonList.find((p) => p.name === pokemonName);
+          return pokemon?.types || [];
+        })
+        .flat(); // Combina todos os tipos em um único array
+
+      if (types.length > 0) {
+        const advantages = await fetchTypeAdvantages(types);
+        console.log("Vantagens calculadas:", advantages); // Log para depuração
+        setTypeAdvantages(advantages);
+      } else {
+        setTypeAdvantages(null);
+      }
+    };
+    calculateAdvantages();
+  }, [team, pokemonList]);
+
+  const handleAddPokemon = (pokemonName: string) => {
+    if (selectedSlot !== null) {
+      const newTeam = [...team];
+      newTeam[selectedSlot] = pokemonName;
+      setTeam(newTeam);
+      setSelectedSlot(null);
+    }
+  };
+
+  const handleRemovePokemon = (slotIndex: number) => {
+    const newTeam = [...team];
+    newTeam[slotIndex] = null;
+    setTeam(newTeam);
+  };
+
+  return (
+    <div className="max-h-max min-h-screen w-screen bg-gray-50 font-sans">
+      <PokeDetailsModal
+        poke_name={modalPokeName}
+        poke_number={modalPokeNumber}
+        poke_image={modalPokeImage}
+        show_modal={openModal}
+        setOpenModal={setOpenModal}
+        poke_types={modalPokeTypes}
+        poke_desc={modalPokeDesc}
+        handleAddPokemon={handleAddPokemon}
+      />
+      <header className="bg-gradient-to-r from-red-500 to-red-700 p-6 shadow-md">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-white">
+            Pokémon Team Builder
+          </h1>
+          <p className="text-sm text-gray-200">
+            Breno de Moura | Lucas Breda | Pedro Mariotti
+          </p>
         </div>
+      </header>
+
+      <main className="px-4 py-8 md:px-16">
+        <section className="flex flex-col gap-8 lg:flex-row">
+          {/* Retângulo do Time */}
+          <div className="flex-1 rounded-4xl bg-white p-6 shadow-md">
+            <h2 className="mb-4 text-xl font-bold text-gray-800">Seu Time</h2>
+            <div className="grid grid-cols-3 gap-4">
+              {team.map((pokemon, index) => (
+                <PokeTeamSlot
+                  key={index}
+                  pokemonName={pokemon}
+                  onAdd={() => setSelectedSlot(index)}
+                  onRemove={() => handleRemovePokemon(index)}
+                  pokemonList={pokemonList}
+                />
+              ))}
+              {team.every((slot) => slot === null) && (
+                <p className="col-span-3 text-center text-gray-500">
+                  Seu time está vazio. Adicione Pokémon para começar!
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Retângulo das Estatísticas */}
+          <div className="relative flex-1 overflow-hidden rounded-4xl bg-white p-6 shadow-md">
+            <h2 className="mb-4 text-xl font-bold text-gray-800">
+              Estatísticas
+            </h2>
+
+            <div className="h-auto">
+              <div
+                className={`lg:transition-transform lg:duration-500 ${
+                  currentScreen === 0
+                    ? "lg:translate-x-0"
+                    : "lg:-translate-x-full"
+                }`}
+              >
+                {/* Tela 1: Defesa do Time */}
+                <div className="inset-0 h-64 overflow-y-auto lg:absolute">
+                  {" "}
+                  {/* Adicionado scroll vertical */}
+                  <h3 className="text-lg font-semibold text-green-600">
+                    Defesas
+                  </h3>
+                  <ul className="mt-4 grid grid-cols-5 gap-2 lg:grid-cols-6">
+                    {typeAdvantages?.strongAgainst?.map((type: string) => (
+                      <PokeType key={type} type={type} />
+                    ))}
+                  </ul>
+                  <h3 className="mt-4 text-lg font-semibold text-red-600">
+                    Fraquezas
+                  </h3>
+                  <ul className="mt-4 grid grid-cols-5 gap-2 lg:grid-cols-6">
+                    {typeAdvantages?.weakAgainst?.map((type: string) => (
+                      <PokeType key={type} type={type} />
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div
+                className={`lg:transition-transform lg:duration-500 ${
+                  currentScreen === 1
+                    ? "lg:translate-x-0"
+                    : "lg:-translate-x-full"
+                }`}
+              >
+                {/* Tela 2: Cobertura */}
+                <div className="inset-0">
+                  <h3 className="text-lg font-semibold text-blue-600">
+                    Vantagens
+                  </h3>
+                  <ul className="mt-4 grid grid-cols-6 gap-4">
+                    {typeAdvantages?.strongAgainst?.map((type: string) => (
+                      <PokeType key={type} type={type} />
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Botões de navegação */}
+            <button
+              className="absolute top-1/2 left-2 hidden -translate-y-1/2 transform rounded-full bg-gray-200 p-2 shadow hover:bg-gray-300 lg:block"
+              onClick={handlePreviousScreen}
+            >
+              {"<"}
+            </button>
+            <button
+              className="absolute top-1/2 right-2 hidden -translate-y-1/2 transform rounded-full bg-gray-200 p-2 shadow hover:bg-gray-300 lg:block"
+              onClick={handleNextScreen}
+            >
+              {">"}
+            </button>
+          </div>
+        </section>
+
+        {/* Barra de Busca */}
+        {selectedSlot !== null && (
+          <section className="mt-8">
+            <div className="flex w-full flex-col">
+              <div className="flex items-center justify-between">
+                <input
+                  type="text"
+                  placeholder="Pesquisar Pokémon..."
+                  className="mb-4 w-full rounded border p-2 shadow-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button
+                  className="ml-4 rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+                  onClick={() => setSelectedSlot(null)}
+                >
+                  Cancelar
+                </button>
+              </div>
+              <ul className="flex flex-col gap-4 md:grid md:grid-cols-3">
+                {pokemonList
+                  .filter((pokemon) =>
+                    pokemon.name
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase()),
+                  )
+                  .map((pokemon) => (
+                    <PokeCardSearch
+                      key={pokemon.name}
+                      poke_name={pokemon.name}
+                      poke_types={pokemon.types}
+                      poke_image={pokemon.sprite}
+                      poke_number={pokemon.id}
+                      setOpenModal={setOpenModal}
+                      setModalPokeDesc={setModalPokeDesc}
+                      setModalPokeImage={setModalPokeImage}
+                      setModalTypeArray={setModalPokeTypes}
+                      setmodalPokeNumber={setmodalPokeNumber}
+                      setModalPokeName={setmodalPokeName}
+                      poke_desc={""}
+                    />
+                  ))}
+                {pokemonList.filter((pokemon) =>
+                  pokemon.name
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()),
+                ).length === 0 && (
+                  <p className="col-span-3 text-center text-gray-500">
+                    Nenhum Pokémon encontrado.
+                  </p>
+                )}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        {/* Cadeia de Evolução */}
+        <section className="mt-8">
+          <h2 className="mb-4 text-2xl font-bold">Cadeia de Evolução</h2>
+          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-2">
+            {team.map((pokemon, index) =>
+              pokemon ? (
+                <PokeEvolution key={index} pokemonName={pokemon} />
+              ) : null,
+            )}
+          </div>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
