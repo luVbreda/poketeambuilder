@@ -2,15 +2,11 @@
 import { useState, useEffect } from "react";
 import PokeTeamSlot from "@/components/PokeTeamSlot";
 import PokeEvolution from "@/components/PokeEvolution";
-import {
-  fetchPokemonList,
-  fetchTypeAdvantages,
-  fetchPokemonSpecies,
-} from "@/utils/pokeapi";
+import { fetchPokemonList, fetchTypeAdvantages } from "@/utils/pokeapi";
 import PokeCardSearch from "../components/PokeCardSearch";
 import PokeDetailsModal from "@/components/PokeDetailsModal";
-import getBgColor from "@/components/aux components/type";
 import PokeType from "@/components/aux components/type";
+import ErrorIcon from "../../public/material-symbols--close-rounded.svg";
 
 export default function Home() {
   const [team, setTeam] = useState<(string | null)[]>([
@@ -27,7 +23,7 @@ export default function Home() {
   const [typeAdvantages, setTypeAdvantages] = useState<any>(null);
   const [openModal, setOpenModal] = useState(false);
 
-  const [modalPokeImage, setModalPokeImage] = useState("");
+  const [modalPokeImage, setModalPokeImage] = useState(ErrorIcon);
   const [modalPokeName, setmodalPokeName] = useState("");
   const [modalPokeNumber, setmodalPokeNumber] = useState(1);
   const [modalPokeDesc, setModalPokeDesc] = useState(" ");
@@ -112,7 +108,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="px-4 pt-8 md:px-16">
+      <main className="px-4 py-8 md:px-16">
         <section className="flex flex-col gap-8 lg:flex-row">
           {/* Retângulo do Time */}
           <div className="flex-1 rounded-4xl bg-white p-6 shadow-md">
@@ -136,25 +132,35 @@ export default function Home() {
           </div>
 
           {/* Retângulo das Estatísticas */}
-          <div className="flex-1 rounded-4xl bg-white p-6 shadow-md relative overflow-hidden">
-            <h2 className="mb-4 text-xl font-bold text-gray-800">Estatísticas</h2>
+          <div className="relative flex-1 overflow-hidden rounded-4xl bg-white p-6 shadow-md">
+            <h2 className="mb-4 text-xl font-bold text-gray-800">
+              Estatísticas
+            </h2>
 
             <div className="h-auto">
               <div
-                className={`transition-transform duration-500 ${
-                  currentScreen === 0 ? "translate-x-0" : "-translate-x-full"
+                className={`lg:transition-transform lg:duration-500 ${
+                  currentScreen === 0
+                    ? "lg:translate-x-0"
+                    : "lg:-translate-x-full"
                 }`}
               >
                 {/* Tela 1: Defesa do Time */}
-                <div className="absolute inset-0 h-64 overflow-y-auto"> {/* Adicionado scroll vertical */}
-                  <h3 className="text-lg font-semibold text-green-600">Defesas</h3>
-                  <ul className="grid grid-cols-6 gap-2 mt-4">
+                <div className="inset-0 h-64 overflow-y-auto lg:absolute">
+                  {" "}
+                  {/* Adicionado scroll vertical */}
+                  <h3 className="text-lg font-semibold text-green-600">
+                    Defesas
+                  </h3>
+                  <ul className="mt-4 grid grid-cols-5 gap-2 lg:grid-cols-6">
                     {typeAdvantages?.strongAgainst?.map((type: string) => (
                       <PokeType key={type} type={type} />
                     ))}
                   </ul>
-                  <h3 className="mt-4 text-lg font-semibold text-red-600">Fraquezas</h3>
-                  <ul className="grid grid-cols-6 gap-2 mt-4">
+                  <h3 className="mt-4 text-lg font-semibold text-red-600">
+                    Fraquezas
+                  </h3>
+                  <ul className="mt-4 grid grid-cols-5 gap-2 lg:grid-cols-6">
                     {typeAdvantages?.weakAgainst?.map((type: string) => (
                       <PokeType key={type} type={type} />
                     ))}
@@ -163,14 +169,18 @@ export default function Home() {
               </div>
 
               <div
-                className={`transition-transform duration-500 ${
-                  currentScreen === 1 ? "translate-x-0" : "-translate-x-full"
+                className={`lg:transition-transform lg:duration-500 ${
+                  currentScreen === 1
+                    ? "lg:translate-x-0"
+                    : "lg:-translate-x-full"
                 }`}
               >
                 {/* Tela 2: Cobertura */}
-                <div className="absolute inset-0">
-                  <h3 className="text-lg font-semibold text-blue-600">Vantagens</h3>
-                  <ul className="grid grid-cols-6 gap-2 mt-4">
+                <div className="inset-0">
+                  <h3 className="text-lg font-semibold text-blue-600">
+                    Vantagens
+                  </h3>
+                  <ul className="mt-4 grid grid-cols-6 gap-4">
                     {typeAdvantages?.strongAgainst?.map((type: string) => (
                       <PokeType key={type} type={type} />
                     ))}
@@ -181,13 +191,13 @@ export default function Home() {
 
             {/* Botões de navegação */}
             <button
-              className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-gray-200 p-2 rounded-full shadow hover:bg-gray-300"
+              className="absolute top-1/2 left-2 hidden -translate-y-1/2 transform rounded-full bg-gray-200 p-2 shadow hover:bg-gray-300 lg:block"
               onClick={handlePreviousScreen}
             >
               {"<"}
             </button>
             <button
-              className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-gray-200 p-2 rounded-full shadow hover:bg-gray-300"
+              className="absolute top-1/2 right-2 hidden -translate-y-1/2 transform rounded-full bg-gray-200 p-2 shadow hover:bg-gray-300 lg:block"
               onClick={handleNextScreen}
             >
               {">"}
@@ -199,22 +209,22 @@ export default function Home() {
         {selectedSlot !== null && (
           <section className="mt-8">
             <div className="flex w-full flex-col">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
                 <input
                   type="text"
                   placeholder="Pesquisar Pokémon..."
-                  className="mb-4 w-full rounded border p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="flex-1 rounded border p-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <button
-                  className="ml-4 rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+                  className="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600"
                   onClick={() => setSelectedSlot(null)}
                 >
                   Cancelar
                 </button>
               </div>
-              <ul className="grid grid-cols-3 gap-4">
+              <ul className="flex flex-col gap-4 md:grid md:grid-cols-3">
                 {pokemonList
                   .filter((pokemon) =>
                     pokemon.name
@@ -254,7 +264,7 @@ export default function Home() {
         {/* Cadeia de Evolução */}
         <section className="mt-8">
           <h2 className="mb-4 text-2xl font-bold">Cadeia de Evolução</h2>
-          <div className="grid grid-cols-2 gap-8">
+          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-2">
             {team.map((pokemon, index) =>
               pokemon ? (
                 <PokeEvolution key={index} pokemonName={pokemon} />
