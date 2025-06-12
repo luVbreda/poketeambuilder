@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import PokeType from "@/components/aux components/type";
 
@@ -7,14 +7,40 @@ export default function PokeTeamSlot({
   pokemonName,
   onAdd,
   onRemove,
-  pokemonList,
 }: {
   pokemonName: string | null;
   onAdd: () => void;
   onRemove: () => void;
-  pokemonList: any[];
 }) {
-  const pokemonData = pokemonList.find((p) => p.name === pokemonName);
+  const [pokemonData, setPokemonData] = useState<any>(null);
+
+  useEffect(() => {
+    if (!pokemonName) {
+      setPokemonData(null);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        const res = await fetch(
+          `https://pokeapi.co/api/v2/pokemon/${pokemonName.toLowerCase()}`,
+        );
+        if (!res.ok) {
+          setPokemonData(null);
+          return;
+        }
+        const data = await res.json();
+        setPokemonData({
+          sprite: data.sprites.front_default,
+          types: data.types.map((t: any) => t.type.name),
+        });
+      } catch {
+        setPokemonData(null);
+      }
+    };
+
+    fetchData();
+  }, [pokemonName]);
 
   return (
     <div
@@ -24,13 +50,19 @@ export default function PokeTeamSlot({
     >
       {pokemonName && pokemonData ? (
         <div className="flex flex-col items-center">
-          <Image
-            src={pokemonData.sprite}
-            alt={pokemonName}
-            width={64}
-            height={64}
-            className="h-16 w-16"
-          />
+          {pokemonData.sprite ? (
+            <Image
+              src={pokemonData.sprite}
+              alt={pokemonName}
+              width={64}
+              height={64}
+              className="h-16 w-16"
+            />
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center text-gray-400">
+              ?
+            </div>
+          )}
           <span className="mt-2 text-sm capitalize">{pokemonName}</span>
           <ul className="flex gap-1">
             {pokemonData.types?.map((type: string) => (

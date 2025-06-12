@@ -13,6 +13,7 @@ export default function PokeDetailsModal(props: {
   poke_types: Array<string>;
   poke_desc: string;
 }) {
+  console.log("POKEIMAGE " + props.poke_image);
   return (
     <div
       className={`fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${
@@ -31,7 +32,7 @@ export default function PokeDetailsModal(props: {
           <Image
             src={props.poke_image}
             alt="pokemon image"
-            className="w-48 md:w-64"
+            className="w-48 object-contain md:w-64" // Adicionado object-contain para corrigir a proporção da imagem
             width={96}
             height={96}
           />
@@ -47,6 +48,7 @@ export default function PokeDetailsModal(props: {
                 ))}
               </ul>
             </div>
+            {/* Exibir a descrição dinâmica */}
             <p className="text-justify">{props.poke_desc}</p>
             <button
               className="rounded-3xl border-1 border-black bg-red-50 p-2"

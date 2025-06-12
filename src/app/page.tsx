@@ -1,279 +1,140 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useState, useEffect } from "react";
-import PokeTeamSlot from "@/components/PokeTeamSlot";
-import PokeEvolution from "@/components/PokeEvolution";
-import { fetchPokemonList, fetchTypeAdvantages } from "@/utils/pokeapi";
-import PokeCardSearch from "../components/PokeCardSearch";
-import PokeDetailsModal from "@/components/PokeDetailsModal";
-import PokeType from "@/components/aux components/type";
-import ErrorIcon from "../../public/material-symbols--close-rounded.svg";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import eeveePng from "../../public/pokemon-eevee.png";
+import pikachuPng from "../../public/pokemon-pikachu.png";
+import teamBuilderText from "../../public/Pokemon-team-builder-text.png";
 
-export default function Home() {
-  const [team, setTeam] = useState<(string | null)[]>([
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-  ]);
-  const [pokemonList, setPokemonList] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
-  const [typeAdvantages, setTypeAdvantages] = useState<any>(null);
-  const [openModal, setOpenModal] = useState(false);
+export default function LoginPage() {
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  const [modalPokeImage, setModalPokeImage] = useState(ErrorIcon);
-  const [modalPokeName, setmodalPokeName] = useState("");
-  const [modalPokeNumber, setmodalPokeNumber] = useState(1);
-  const [modalPokeDesc, setModalPokeDesc] = useState(" ");
-  const [modalPokeTypes, setModalPokeTypes] = useState([" "]);
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
 
-  const [currentScreen, setCurrentScreen] = useState(0); // Estado para alternar entre as telas
+    try {
+      const response = await fetch(
+        "https://pokedex-backend-woad.vercel.app/api/users/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        },
+      );
 
-  const handleNextScreen = () => {
-    setCurrentScreen((prev) => (prev + 1) % 2); // Alterna entre 0 e 1
-  };
-
-  const handlePreviousScreen = () => {
-    setCurrentScreen((prev) => (prev - 1 + 2) % 2); // Alterna entre 0 e 1
-  };
-
-  // Busca o pokemon
-  useEffect(() => {
-    const loadPokemonList = async () => {
-      const list = await fetchPokemonList();
-      setPokemonList(list);
-    };
-    loadPokemonList();
-  }, []);
-
-  // Calcula as vantagens e fraquezas do time
-  useEffect(() => {
-    const calculateAdvantages = async () => {
-      const types = team
-        .filter(Boolean) // Remove slots vazios
-        .map((pokemonName) => {
-          const pokemon = pokemonList.find((p) => p.name === pokemonName);
-          return pokemon?.types || [];
-        })
-        .flat(); // Combina todos os tipos em um único array
-
-      if (types.length > 0) {
-        const advantages = await fetchTypeAdvantages(types);
-        console.log("Vantagens calculadas:", advantages); // Log para depuração
-        setTypeAdvantages(advantages);
-      } else {
-        setTypeAdvantages(null);
+      if (!response.ok) {
+        throw new Error("Invalid email or password");
       }
-    };
-    calculateAdvantages();
-  }, [team, pokemonList]);
 
-  const handleAddPokemon = (pokemonName: string) => {
-    if (selectedSlot !== null) {
-      const newTeam = [...team];
-      newTeam[selectedSlot] = pokemonName;
-      setTeam(newTeam);
-      setSelectedSlot(null);
+      const data = await response.json();
+      // Store token and userId in localStorage
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+      if (data.userId) {
+        localStorage.setItem("userId", data.userId);
+      }
+      console.log("Login successful:", data);
+      // Redirect to dashboard
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleRemovePokemon = (slotIndex: number) => {
-    const newTeam = [...team];
-    newTeam[slotIndex] = null;
-    setTeam(newTeam);
-  };
-
   return (
-    <div className="max-h-max min-h-screen w-screen bg-gray-50 font-sans">
-      <PokeDetailsModal
-        poke_name={modalPokeName}
-        poke_number={modalPokeNumber}
-        poke_image={modalPokeImage}
-        show_modal={openModal}
-        setOpenModal={setOpenModal}
-        poke_types={modalPokeTypes}
-        poke_desc={modalPokeDesc}
-        handleAddPokemon={handleAddPokemon}
-      />
-      <header className="bg-gradient-to-r from-red-500 to-red-700 p-6 shadow-md">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-white">
-            Pokémon Team Builder
-          </h1>
-          <p className="text-sm text-gray-200">
-            Breno de Moura | Lucas Breda | Pedro Mariotti
-          </p>
+    <div className="relative flex min-h-screen items-center justify-center bg-[#eeafaf]">
+      {/* Left Pokémon Image */}
+      <div className="absolute top-0 left-0 flex h-full w-1/4 items-center justify-center">
+        <Image
+          width={400}
+          height={400}
+          src={pikachuPng}
+          alt="Pokemon Left"
+          className="max-h-full object-contain"
+        />
+      </div>
+
+      {/* Right Pokémon Image */}
+      <div className="absolute top-0 right-0 flex h-full w-1/4 items-center justify-center">
+        <Image
+          width={400}
+          height={400}
+          src={eeveePng}
+          alt="Pokemon Right"
+          className="max-h-full object-contain"
+        />
+      </div>
+
+      {/* Login Form */}
+      <div className="z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-md">
+        <Image
+          width={400}
+          height={400}
+          src={teamBuilderText}
+          alt="Pokemon Team Builder"
+        />
+        <h1 className="mb-6 text-2xl font-bold text-gray-800">Login</h1>
+        <form onSubmit={handleLogin}>
+          <div className="mb-4">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Username
+            </label>
+            <input
+              type="text"
+              id="username"
+              className="mt-1 w-full rounded border p-2 shadow-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              className="mt-1 w-full rounded border p-2 shadow-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+          <button
+            type="submit"
+            className="w-full rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+        <div className="mt-4 flex justify-center">
+          <a
+            href="/register"
+            className="w-full rounded bg-gray-200 px-4 py-2 text-center text-gray-800 transition-colors hover:bg-gray-300"
+          >
+            Register
+          </a>
         </div>
-      </header>
-
-      <main className="px-4 py-8 md:px-16">
-        <section className="flex flex-col gap-8 lg:flex-row">
-          {/* Retângulo do Time */}
-          <div className="flex-1 rounded-4xl bg-white p-6 shadow-md">
-            <h2 className="mb-4 text-xl font-bold text-gray-800">Seu Time</h2>
-            <div className="grid grid-cols-3 gap-4">
-              {team.map((pokemon, index) => (
-                <PokeTeamSlot
-                  key={index}
-                  pokemonName={pokemon}
-                  onAdd={() => setSelectedSlot(index)}
-                  onRemove={() => handleRemovePokemon(index)}
-                  pokemonList={pokemonList}
-                />
-              ))}
-              {team.every((slot) => slot === null) && (
-                <p className="col-span-3 text-center text-gray-500">
-                  Seu time está vazio. Adicione Pokémon para começar!
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Retângulo das Estatísticas */}
-          <div className="relative flex-1 overflow-hidden rounded-4xl bg-white p-6 shadow-md">
-            <h2 className="mb-4 text-xl font-bold text-gray-800">
-              Estatísticas
-            </h2>
-
-            <div className="h-auto">
-              <div
-                className={`lg:transition-transform lg:duration-500 ${
-                  currentScreen === 0
-                    ? "lg:translate-x-0"
-                    : "lg:-translate-x-full"
-                }`}
-              >
-                {/* Tela 1: Defesa do Time */}
-                <div className="inset-0 h-64 overflow-y-auto lg:absolute">
-                  {" "}
-                  {/* Adicionado scroll vertical */}
-                  <h3 className="text-lg font-semibold text-green-600">
-                    Defesas
-                  </h3>
-                  <ul className="mt-4 grid grid-cols-5 gap-2 lg:grid-cols-6">
-                    {typeAdvantages?.strongAgainst?.map((type: string) => (
-                      <PokeType key={type} type={type} />
-                    ))}
-                  </ul>
-                  <h3 className="mt-4 text-lg font-semibold text-red-600">
-                    Fraquezas
-                  </h3>
-                  <ul className="mt-4 grid grid-cols-5 gap-2 lg:grid-cols-6">
-                    {typeAdvantages?.weakAgainst?.map((type: string) => (
-                      <PokeType key={type} type={type} />
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <div
-                className={`lg:transition-transform lg:duration-500 ${
-                  currentScreen === 1
-                    ? "lg:translate-x-0"
-                    : "lg:-translate-x-full"
-                }`}
-              >
-                {/* Tela 2: Cobertura */}
-                <div className="inset-0">
-                  <h3 className="text-lg font-semibold text-blue-600">
-                    Vantagens
-                  </h3>
-                  <ul className="mt-4 grid grid-cols-6 gap-4">
-                    {typeAdvantages?.strongAgainst?.map((type: string) => (
-                      <PokeType key={type} type={type} />
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {/* Botões de navegação */}
-            <button
-              className="absolute top-1/2 left-2 hidden -translate-y-1/2 transform rounded-full bg-gray-200 p-2 shadow hover:bg-gray-300 lg:block"
-              onClick={handlePreviousScreen}
-            >
-              {"<"}
-            </button>
-            <button
-              className="absolute top-1/2 right-2 hidden -translate-y-1/2 transform rounded-full bg-gray-200 p-2 shadow hover:bg-gray-300 lg:block"
-              onClick={handleNextScreen}
-            >
-              {">"}
-            </button>
-          </div>
-        </section>
-
-        {/* Barra de Busca */}
-        {selectedSlot !== null && (
-          <section className="mt-8">
-            <div className="flex w-full flex-col">
-              <div className="flex items-center justify-between">
-                <input
-                  type="text"
-                  placeholder="Pesquisar Pokémon..."
-                  className="mb-4 w-full rounded border p-2 shadow-sm focus:ring-2 focus:ring-red-500 focus:outline-none"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button
-                  className="ml-4 rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600"
-                  onClick={() => setSelectedSlot(null)}
-                >
-                  Cancelar
-                </button>
-              </div>
-              <ul className="flex flex-col gap-4 md:grid md:grid-cols-3">
-                {pokemonList
-                  .filter((pokemon) =>
-                    pokemon.name
-                      .toLowerCase()
-                      .includes(searchQuery.toLowerCase()),
-                  )
-                  .map((pokemon) => (
-                    <PokeCardSearch
-                      key={pokemon.name}
-                      poke_name={pokemon.name}
-                      poke_types={pokemon.types}
-                      poke_image={pokemon.sprite}
-                      poke_number={pokemon.id}
-                      setOpenModal={setOpenModal}
-                      setModalPokeDesc={setModalPokeDesc}
-                      setModalPokeImage={setModalPokeImage}
-                      setModalTypeArray={setModalPokeTypes}
-                      setmodalPokeNumber={setmodalPokeNumber}
-                      setModalPokeName={setmodalPokeName}
-                      poke_desc={""}
-                    />
-                  ))}
-                {pokemonList.filter((pokemon) =>
-                  pokemon.name
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()),
-                ).length === 0 && (
-                  <p className="col-span-3 text-center text-gray-500">
-                    Nenhum Pokémon encontrado.
-                  </p>
-                )}
-              </ul>
-            </div>
-          </section>
-        )}
-
-        {/* Cadeia de Evolução */}
-        <section className="mt-8">
-          <h2 className="mb-4 text-2xl font-bold">Cadeia de Evolução</h2>
-          <div className="flex flex-col gap-8 lg:grid lg:grid-cols-2">
-            {team.map((pokemon, index) =>
-              pokemon ? (
-                <PokeEvolution key={index} pokemonName={pokemon} />
-              ) : null,
-            )}
-          </div>
-        </section>
-      </main>
+      </div>
     </div>
   );
 }
